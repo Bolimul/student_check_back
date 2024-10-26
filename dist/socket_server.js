@@ -34,14 +34,12 @@ module.exports = (server) => {
         }));
         socket.on('GetPersonalSessionServer', (args, ack) => __awaiter(void 0, void 0, void 0, function* () {
             var studentId = args.id;
-            var sessionIdentifier = args.type == 'update' ? args.sessionIdentifier : Number.parseInt(args.sessionIdentifier);
+            var sessionIdentifier = Number.parseInt(args.sessionIdentifier);
             var resFinal = true;
-            var session = null;
-            if (args.type == 'get')
-                session = yield student_model_1.default.sessions.findById((yield student_model_1.default.students.findById(studentId, { sessions: 1 }).lean()).sessions[sessionIdentifier]._id, { date: 1, info: 1 }).exec();
-            else
-                session = yield student_model_1.default.sessions.findOne({ sessionOwner: args.id, date: sessionIdentifier }).lean().exec();
-            var info = Array(Array.from(session.get('info')).map((item) => item[1]));
+            var student = yield student_model_1.default.students.findById(studentId).lean();
+            var info = [];
+            var session = yield student_model_1.default.sessions.findById(student.sessions[sessionIdentifier]);
+            info = Array.from(Array.from(session.info).map((category) => category[1]));
             const res = yield socket.emitWithAck('GetPersonalSessionClient', { id: studentId, date: session.date, params: info });
             if (res == false)
                 resFinal = false;

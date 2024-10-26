@@ -19,13 +19,8 @@ const service_account_1 = require("./service_account");
 const http_1 = __importDefault(require("http"));
 const student_model_1 = __importDefault(require("./Models/student_model"));
 const socket_server_1 = __importDefault(require("./socket_server"));
-const fs_1 = __importDefault(require("fs"));
 const app = (0, express_1.default)();
 const port = 3000;
-var options = {
-    key: fs_1.default.readFileSync('./keys/key.pem'),
-    cert: fs_1.default.readFileSync('./keys/cert.pem')
-};
 const service_credentials = service_account_1.service_account;
 const server = http_1.default.createServer(app);
 (0, socket_server_1.default)(server);
@@ -34,75 +29,31 @@ firebase_admin_1.default.initializeApp({
     databaseURL: "https://makeittogether-6d49b-default-rtdb.europe-west1.firebasedatabase.app",
     databaseAuthVariableOverride: { uid: "school-server" }
 });
-const listOfSessions = [
-    { date: new Date(2024, 3, 1, 0, 0, 0, 0).toISOString(), info: [5, 4, 8, 7, ...Array.from(Array(22).fill(1).map(x => Math.round(Math.random())))] },
-    { date: new Date(2024, 3, 5, 0, 0, 0, 0).toISOString(), info: [4, 3, 9, 6, ...Array.from(Array(22).fill(1).map(x => Math.round(Math.random())))] },
-    { date: new Date(2024, 3, 10, 0, 0, 0, 0).toISOString(), info: [6, 2, 8, 9, ...Array.from(Array(22).fill(1).map(x => Math.round(Math.random())))] },
-    { date: new Date(2024, 3, 15, 0, 0, 0, 0).toISOString(), info: [9, 3, 1, 2, ...Array.from(Array(22).fill(1).map(x => Math.round(Math.random())))] },
-    { date: new Date(2024, 3, 20, 0, 0, 0, 0).toISOString(), info: [7, 6, 2, 4, ...Array.from(Array(22).fill(1).map(x => Math.round(Math.random())))] },
-    { date: new Date(2024, 3, 25, 0, 0, 0, 0).toISOString(), info: [8, 7, 5, 2, ...Array.from(Array(22).fill(1).map(x => Math.round(Math.random())))] },
-    { date: new Date(2024, 3, 30, 0, 0, 0, 0).toISOString(), info: [8, 9, 6, 1, ...Array.from(Array(22).fill(1).map(x => Math.round(Math.random())))] },
-];
-const listOfStudents = [
-    {
-        _id: 1,
-        name: "Noam",
-        group: "Afarsek"
-    },
-    {
-        _id: 2,
-        name: "Kirill",
-        group: "Shezif"
-    },
-    {
-        _id: 3,
-        name: "Secillia",
-        group: "Afarsek"
-    },
-    {
-        _id: 4,
-        name: "Ido",
-        group: "Egoz"
-    },
-    {
-        _id: 5,
-        name: "Noam",
-        group: "Egoz"
-    }
-];
 const db = firebase_admin_1.default.database();
 var refToStudents = db.ref("Students");
 var refToQuestionnaires = db.ref("StudentQuestionnaire");
 mongoose_1.default.connect("mongodb://localhost/StudentDatabase");
 server.listen(port, () => __awaiter(void 0, void 0, void 0, function* () {
-    syncDB().then(() => console.log(`Listening to port ${port}`));
-    // listOfStudents.forEach(async(element) => {
-    //     let NewStudent = new Models.students({_id: element._id, name: element.name, group: element.group})
-    //     await NewStudent.save()
-    //     listOfSessions.forEach(async(session) => {
-    //         const NewSession = await Models.sessions.create({sessionOwner: NewStudent._id, date: session.date, info: session.info})
-    //         await Models.students.findByIdAndUpdate(element._id, {$push: {sessions: {$each: [NewSession._id]}}})
-    //     })
-    // });
+    //syncDB().then(() => console.log(`Listening to port ${port}`))
 }));
-refToStudents.on('child_added', (snapshot) => __awaiter(void 0, void 0, void 0, function* () {
-    var info = Object(snapshot.val());
-    yield addStudent(snapshot.key, info);
-}));
-refToStudents.on('child_changed', (snapshot) => __awaiter(void 0, void 0, void 0, function* () {
-    var info = Object(snapshot.val());
-    yield updateStudent(snapshot.key, info);
-}));
-refToStudents.on('child_removed', (snapshot) => __awaiter(void 0, void 0, void 0, function* () {
-    yield deleteStudent(snapshot.key);
-    yield refToQuestionnaires.child(snapshot.key).remove();
-}));
-refToQuestionnaires.on("child_changed", (snapshot) => __awaiter(void 0, void 0, void 0, function* () {
-    yield getSession(snapshot.key);
-}));
-refToQuestionnaires.on("child_added", (snapshot) => __awaiter(void 0, void 0, void 0, function* () {
-    yield getSession(snapshot.key);
-}));
+// refToStudents.on('child_added', async(snapshot) => {
+//     var info = Object(snapshot.val())
+//     await addStudent(snapshot.key, info)
+// })
+// refToStudents.on('child_changed', async(snapshot) => {
+//     var info = Object(snapshot.val())
+//     await updateStudent(snapshot.key, info)
+// })
+// refToStudents.on('child_removed', async(snapshot) => {
+//     await deleteStudent(snapshot.key) 
+//     await refToQuestionnaires.child(snapshot.key).remove()
+// })
+// refToQuestionnaires.on("child_changed", async(snapshot) => {
+//     await getSession(snapshot.key)
+// })
+// refToQuestionnaires.on("child_added", async(snapshot) => {
+//     await getSession(snapshot.key)
+// })
 const syncDB = () => __awaiter(void 0, void 0, void 0, function* () {
     var studentsId = (yield student_model_1.default.students.find({}, { _id: 1 }).lean()).map((id) => id._id);
     var snapshot = yield db.ref("Students").once("value");

@@ -18,14 +18,15 @@ export = (server: http.Server) => {
 
         socket.on('GetPersonalSessionServer', async(args, ack) => {
             var studentId = args.id
-            var sessionIdentifier = args.type == 'update'?args.sessionIdentifier:Number.parseInt(args.sessionIdentifier)
+            var sessionIdentifier = Number.parseInt(args.sessionIdentifier)
             var resFinal = true
-            var session = null
-            if(args.type == 'get')
-                session = await Models.sessions.findById((await Models.students.findById(studentId,{sessions: 1}).lean()).sessions[sessionIdentifier]._id, {date: 1, info: 1}).exec()
-            else
-                session = await Models.sessions.findOne({sessionOwner: args.id, date: sessionIdentifier}).lean().exec()
-            var info = Array(Array.from(session.get('info')).map((item) => item[1]))
+            var student = await Models.students.findById(studentId).lean()
+            var info = []
+            var id = student.sessions[sessionIdentifier].toString()
+            var session = await Models.sessions.findById(id).exec()
+            if(session == null)
+                session = await Models.sessions.findById(id).exec()
+            info = Array.from(Array.from(session.info).map((category) => category[1]))
             const res = await socket.emitWithAck('GetPersonalSessionClient', {id: studentId, date: session.date, params: info})
             if(res == false)
                 resFinal = false

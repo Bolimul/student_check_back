@@ -1,20 +1,20 @@
 import express from "express"
 import mongoose from "mongoose"
 import admin from "firebase-admin"
-import { service_account } from "./service_account"
+//import { service_account } from "./service_account"
 import http from "http"
 import Models from "./Models/student_model"
 import socket_server from "./socket_server"
 const app = express()
 const port = 3000
 
-const service_credentials = service_account as admin.ServiceAccount
+//const service_credentials = service_account as admin.ServiceAccount
 const server = http.createServer(app)
 socket_server(server);
 admin.initializeApp({
-    credential: admin.credential.cert(service_credentials),
+    //credential: admin.credential.cert(service_credentials),
     //databaseURL: "https://makeittogether-6d49b-default-rtdb.europe-west1.firebasedatabase.app",
-    databaseAuthVariableOverride: {uid: process.env.UID}
+    databaseAuthVariableOverride: {uid: "school-server"}
 })
 
 
@@ -27,24 +27,24 @@ server.listen(port, async() => {
     syncDB().then(() => console.log(`Listening to port ${port}`))
 })
 
-refToStudents.on('child_added', async(snapshot) => {
-    var info = Object(snapshot.val())
-    await addStudent(snapshot.key, info)
-})
-refToStudents.on('child_changed', async(snapshot) => {
-    var info = Object(snapshot.val())
-    await updateStudent(snapshot.key, info)
-})
-refToStudents.on('child_removed', async(snapshot) => {
-    await deleteStudent(snapshot.key) 
-    await refToQuestionnaires.child(snapshot.key).remove()
-})
-refToQuestionnaires.on("child_changed", async(snapshot) => {
-    await getSession(snapshot.key)
-})
-refToQuestionnaires.on("child_added", async(snapshot) => {
-    await getSession(snapshot.key)
-})
+// refToStudents.on('child_added', async(snapshot) => {
+//     var info = Object(snapshot.val())
+//     await addStudent(snapshot.key, info)
+// })
+// refToStudents.on('child_changed', async(snapshot) => {
+//     var info = Object(snapshot.val())
+//     await updateStudent(snapshot.key, info)
+// })
+// refToStudents.on('child_removed', async(snapshot) => {
+//     await deleteStudent(snapshot.key) 
+//     await refToQuestionnaires.child(snapshot.key).remove()
+// })
+// refToQuestionnaires.on("child_changed", async(snapshot) => {
+//     await getSession(snapshot.key)
+// })
+// refToQuestionnaires.on("child_added", async(snapshot) => {
+//     await getSession(snapshot.key)
+// })
 
 const syncDB = async() => {
     var studentsId = (await Models.students.find({}, {_id: 1}).lean()).map((id) => id._id);
@@ -113,9 +113,19 @@ const addStudent = async(studentId: any, studentData: any) => {
 }
 
 const addSessionSync = async(studentId: any, sessionData: any) => {
+    var finalDate: String = sessionData.date
+    var parts = finalDate.split('T')[0].split('-')
+    if(parts[1].length < 2){
+        parts[1] = "0" + parts[1]
+    }
+    if(parts[2].length < 2 ){
+        parts[2] = "0" + parts[2]
+    }
+    var date = parts[0] + '-' + parts[1] + '-' + parts[2]
+    finalDate.replace(finalDate.split('T')[0], date)
     let NewSession = new Models.sessions({
         sessionOwner: studentId,
-        date: sessionData.date,
+        date: finalDate,
         info: 
         {
             //-----------For Line Chart-----------------//
